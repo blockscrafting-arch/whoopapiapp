@@ -26,9 +26,8 @@ Thumbs.db
 # Logs
 *.log
 
-# README (не трекаем в git; файл локально остаётся)
-README.md
-**/README.md
+# Markdown (всё .md только локально)
+*.md
 
 # Документы (Word, PDF, таблицы, презентации и т.п.)
 *.doc
