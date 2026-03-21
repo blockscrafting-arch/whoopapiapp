@@ -1,0 +1,16 @@
+[Unit]
+Description=WHOOP PWA (FastAPI)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/whoop-pwa/backend
+EnvironmentFile=/opt/whoop-pwa/backend/.env
+ExecStart=/opt/whoop-pwa/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

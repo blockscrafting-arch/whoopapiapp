@@ -1,0 +1,10 @@
+# WHOOP PWA — правила для Cursor
+
+- Язык интерфейса пользователя: русский. Код и комментарии: по делу, на русском или английском единообразно в файле.
+- Не хранить `client_secret` и токены в репозитории; только `.env` (в `.gitignore`).
+- WHOOP API v2: base URL `https://api.prod.whoop.com/developer`; OAuth отдельно на `https://api.prod.whoop.com/oauth/oauth2/...`.
+- Обрабатывать `score_state`: SCORED, PENDING_SCORE, UNSCORABLE — не показывать пустой экран.
+- При refresh токена WHOOP — короткая транзакция с `pg_advisory_xact_lock` + `FOR UPDATE` на `whoop_tokens`; сохранять новую пару токенов. При disconnect — удалять и кеш (`whoop_cache`), и токены.
+- Token endpoint: JSON (как в доке WHOOP), fallback form-urlencoded. Пагинация коллекций: `nextToken` / `next_token` по OpenAPI.
+- Фронт: не вставлять сырой текст API в `innerHTML` без экранирования.
+- Перед изменением схемы БД — миграция Alembic.
