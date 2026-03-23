@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db
@@ -88,7 +89,11 @@ async def oauth_callback(
     first_name = profile.get("first_name")
     last_name = profile.get("last_name")
 
-    r = await db.execute(select(User).where(User.whoop_user_id == whoop_user_id))
+    r = await db.execute(
+        select(User)
+        .options(selectinload(User.token))
+        .where(User.whoop_user_id == whoop_user_id)
+    )
     user = r.scalar_one_or_none()
     if user:
         user.email = email
