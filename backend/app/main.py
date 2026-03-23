@@ -36,13 +36,15 @@ async def force_json_utf8_charset(request: Request, call_next):
     return response
 
 
+# Прод (HTTPS): SameSite=None + Secure — иначе Safari/iOS режет сессию при редиректе с WHOOP.
+# Локально (DEBUG=True): lax + без Secure — иначе cookie не работает на http://localhost.
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SESSION_SECRET_KEY,
     session_cookie="whoop_session",
     max_age=86400 * 30,
-    same_site="none",  # Для iOS Safari: чтобы cookie сессии доходили при OAuth-редиректе
-    https_only=True,   # SameSite=None требует Secure (https_only=True)
+    same_site="none" if not settings.DEBUG else "lax",
+    https_only=not settings.DEBUG,
 )
 
 if settings.cors_origins_list:
