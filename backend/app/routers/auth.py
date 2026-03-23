@@ -1,4 +1,5 @@
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from urllib.parse import quote, urlencode
@@ -95,6 +96,7 @@ async def oauth_callback(
         .where(User.whoop_user_id == whoop_user_id)
     )
     user = r.scalar_one_or_none()
+    is_new = False
     if user:
         user.email = email
         user.first_name = first_name
@@ -109,12 +111,13 @@ async def oauth_callback(
             is_active=True,
         )
         db.add(user)
+        is_new = True
     await db.flush()
 
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(seconds=max(expires_in - 60, 120))
 
-    if user.token:
+    if not is_new and user.token:
         user.token.access_token_enc = encrypt_token(access)
         user.token.refresh_token_enc = encrypt_token(refresh)
         user.token.token_expires_at = expires_at
@@ -135,8 +138,21 @@ async def oauth_callback(
 
 
 @router.get("/status")
-async def auth_status(request: Request) -> dict:
-    return {"logged_in": bool(request.session.get("user_id"))}
+async def auth_status(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict:
+    uid_str = request.session.get("user_id")
+    if not uid_str:
+        return {"logged_in": False}
+    try:
+        uid = uuid.UUID(uid_str)
+    except ValueError:
+        return {"logged_in": False}
+    user = await db.get(User, uid)
+    if not user or not user.is_active:
+        return {"logged_in": False}
+    return {"logged_in": True}
 
 
 @router.post("/logout")

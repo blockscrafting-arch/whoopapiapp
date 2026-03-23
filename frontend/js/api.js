@@ -11,6 +11,11 @@ export async function apiGet(path) {
     data = { detail: text || "Неверный ответ сервера" };
   }
   if (!res.ok) {
+    if (res.status === 401) {
+      window.location.hash = "#/";
+      window.location.reload();
+      await new Promise(() => {}); // ждём выгрузки страницы, иначе код после await увидит null
+    }
     const msg = data?.detail || data?.message || `Ошибка ${res.status}`;
     throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
   }
@@ -31,6 +36,11 @@ export async function apiPost(path) {
     data = { detail: text };
   }
   if (!res.ok) {
+    if (res.status === 401) {
+      window.location.hash = "#/";
+      window.location.reload();
+      await new Promise(() => {}); // ждём выгрузки страницы, иначе код после await увидит null
+    }
     const msg = data?.detail || `Ошибка ${res.status}`;
     throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
   }

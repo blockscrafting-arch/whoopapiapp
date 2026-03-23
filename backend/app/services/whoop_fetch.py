@@ -33,6 +33,9 @@ async def get_json(
             )
         except PermissionError as e:
             raise WhoopRequestError(401, str(e)) from e
+        except RuntimeError as e:
+            # 429/5xx при refresh в token_manager — не 500, а 503 для фронта
+            raise WhoopRequestError(503, str(e)) from e
 
         status, body = await whoop_client.whoop_get(http, token, path, params=params)
         if status == 401:

@@ -98,15 +98,18 @@ async def _refresh_tokens_locked_transaction(
                     row.scopes = str(data["scope"])
     except PermissionError:
         raise
-    except whoop_client.WhoopApiError:
-        async with AsyncSessionLocal() as s2:
-            async with s2.begin():
-                await s2.execute(
-                    update(User).where(User.id == user_id).values(is_active=False)
-                )
-        raise PermissionError(
-            "Не удалось обновить токен. Подключите WHOOP снова."
-        ) from None
+    except whoop_client.WhoopApiError as e:
+        if e.status_code in (400, 401, 403):
+            async with AsyncSessionLocal() as s2:
+                async with s2.begin():
+                    await s2.execute(
+                        update(User).where(User.id == user_id).values(is_active=False)
+                    )
+            raise PermissionError(
+                "Не удалось обновить токен. Подключите WHOOP снова."
+            ) from None
+        # Для 429, 5xx и других ошибок выбрасываем временную ошибку, чтобы не разлогинить пользователя
+        raise RuntimeError(f"WHOOP API временно недоступен ({e.status_code}).") from None
 
 
 async def get_valid_access_token(
