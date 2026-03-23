@@ -40,8 +40,10 @@ function consumeOAuthError() {
 
 function loadingSkeleton() {
   appEl.innerHTML = `
-    <div class="card"><div class="skeleton" style="width:60%"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-    <div class="card"><div class="skeleton"></div><div class="skeleton"></div></div>`;
+    <div class="fade-in">
+      <div class="card"><div class="skeleton" style="width:60%"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+      <div class="card"><div class="skeleton"></div><div class="skeleton"></div></div>
+    </div>`;
 }
 
 function fmtScoreState(st) {
@@ -49,6 +51,13 @@ function fmtScoreState(st) {
   if (st === "UNSCORABLE") return "Нет оценки";
   if (st === "SCORED") return "Готово";
   return escapeHtml(st || "—");
+}
+
+function getRecoveryColorClass(score) {
+  if (score == null) return "";
+  if (score < 40) return "metric-red";
+  if (score < 70) return "metric-yellow";
+  return "metric-green";
 }
 
 async function checkAuth() {
@@ -74,6 +83,10 @@ function recClass(level) {
   return "rec-warn";
 }
 
+window.refreshDashboard = async function() {
+  await renderDashboard();
+};
+
 async function renderDashboard() {
   title.textContent = "Главная";
   loadingSkeleton();
@@ -82,39 +95,45 @@ async function renderDashboard() {
   const s = d.sleep || {};
   const st = d.strain || {};
 
-  const recHtml = (d.recommendations || [])
+    const recHtml = (d.recommendations || [])
     .map(
       (x) =>
         `<div class="${recClass(x.level)}">${escapeHtml(x.text)}</div>`
     )
     .join("");
 
-  const recVal =
-    r.score != null ? `${escapeHtml(String(Math.round(r.score)))}%` : "—";
-  const sleepVal =
-    s.hours != null ? `${escapeHtml(String(s.hours))} ч` : "—";
-  const strainVal =
-    st.score != null ? escapeHtml(st.score.toFixed(1)) : "—";
+  const recVal = r.score != null ? `${escapeHtml(String(Math.round(r.score)))}%` : "—";
+  const recColor = getRecoveryColorClass(r.score);
+  
+  const sleepVal = s.hours != null ? `${escapeHtml(String(s.hours))} ч` : "—";
+  const strainVal = st.score != null ? escapeHtml(st.score.toFixed(1)) : "—";
 
   appEl.innerHTML = `
-    <div class="card">
-      <h2>Recovery</h2>
-      <div class="metric-big">${recVal}</div>
-      <div class="sub"><span class="badge">${fmtScoreState(r.score_state)}</span> ${escapeHtml(r.message || "")}</div>
-    </div>
-    <div class="card">
-      <h2>Сон</h2>
-      <div class="metric-big">${sleepVal}</div>
-      <div class="sub"><span class="badge">${fmtScoreState(s.score_state)}</span> ${escapeHtml(s.message || "")}</div>
-    </div>
-    <div class="card">
-      <h2>Strain</h2>
-      <div class="metric-big">${strainVal}</div>
-      <div class="sub"><span class="badge">${fmtScoreState(st.score_state)}</span> ${escapeHtml(st.message || "")}</div>
-    </div>
-    <div class="card">
-      <h2>Рекомендации</h2>
-      ${recHtml || '<p class="muted">Нет активных рекомендаций.</p>'}
+    <div class="fade-in">
+      <div class="card">
+        <h2>Recovery</h2>
+        <div class="metric-big ${recColor}">${recVal}</div>
+        <div class="sub"><span class="badge">${fmtScoreState(r.score_state)}</span> ${escapeHtml(r.message || "")}</div>
+      </div>
+      <div class="card">
+        <h2>Сон</h2>
+        <div class="metric-big metric-blue">${sleepVal}</div>
+        <div class="sub"><span class="badge">${fmtScoreState(s.score_state)}</span> ${escapeHtml(s.message || "")}</div>
+      </div>
+      <div class="card">
+        <h2>Strain</h2>
+        <div class="metric-big">${strainVal}</div>
+        <div class="sub"><span class="badge">${fmtScoreState(st.score_state)}</span> ${escapeHtml(st.message || "")}</div>
+      </div>
+      <div class="card">
+        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+          Рекомендации
+          <button onclick="refreshDashboard()" class="btn-ghost" style="padding: 0; display: flex; align-items: center;" title="Обновить">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </button>
+        </h2>
+        ${recHtml || '<p class="muted">Нет активных рекомендаций.</p>'}
+      </div>
     </div>`;
 }
 
@@ -141,31 +160,33 @@ async function renderHistory() {
     : "";
 
   appEl.innerHTML = `
-    ${block(
-      "Recovery (7 дней)",
-      h.recoveries,
-      (x) =>
-        x.score_state === "SCORED" && x.recovery_score != null
-          ? `${escapeHtml(String(Math.round(x.recovery_score)))}%`
-          : fmtScoreState(x.score_state)
-    )}
-    ${block(
-      "Сон (7 дней)",
-      h.sleeps,
-      (x) =>
-        x.score_state === "SCORED" && x.hours != null
-          ? `${escapeHtml(String(x.hours))} ч`
-          : fmtScoreState(x.score_state)
-    )}
-    ${block(
-      "Strain (7 дней)",
-      h.cycles,
-      (x) =>
-        x.score_state === "SCORED" && x.strain != null
-          ? escapeHtml(x.strain.toFixed(1))
-          : fmtScoreState(x.score_state)
-    )}
-    ${truncNote}`;
+    <div class="fade-in">
+      ${block(
+        "Recovery (7 дней)",
+        h.recoveries,
+        (x) =>
+          x.score_state === "SCORED" && x.recovery_score != null
+            ? `<span class="${getRecoveryColorClass(x.recovery_score)}">${escapeHtml(String(Math.round(x.recovery_score)))}%</span>`
+            : fmtScoreState(x.score_state)
+      )}
+      ${block(
+        "Сон (7 дней)",
+        h.sleeps,
+        (x) =>
+          x.score_state === "SCORED" && x.hours != null
+            ? `<span class="metric-blue">${escapeHtml(String(x.hours))} ч</span>`
+            : fmtScoreState(x.score_state)
+      )}
+      ${block(
+        "Strain (7 дней)",
+        h.cycles,
+        (x) =>
+          x.score_state === "SCORED" && x.strain != null
+            ? escapeHtml(x.strain.toFixed(1))
+            : fmtScoreState(x.score_state)
+      )}
+      ${truncNote}
+    </div>`;
 }
 
 async function renderWorkouts() {

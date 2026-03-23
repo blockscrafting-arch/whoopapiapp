@@ -6,11 +6,19 @@
   --accent: #238636;
   --warn: #d29922;
   --danger: #f85149;
+  
+  /* Цвета WHOOP */
+  --recovery-green: #3fb950;
+  --recovery-yellow: #d29922;
+  --recovery-red: #f85149;
+  --sleep-blue: #58a6ff;
+  
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* Убирает синий квадрат при клике на iOS */
 }
 
 html,
@@ -22,24 +30,36 @@ body {
   color: var(--text);
 }
 
+/* Анимация появления экранов */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
   padding-top: max(12px, env(safe-area-inset-top, 12px));
-  border-bottom: 1px solid #30363d;
+  border-bottom: 1px solid rgba(48, 54, 61, 0.5); /* Более мягкая линия */
   position: sticky;
   top: 0;
-  background: rgba(13, 17, 23, 0.92);
-  backdrop-filter: blur(8px);
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(12px); /* Усилен блюр (как в iOS) */
+  -webkit-backdrop-filter: blur(12px);
   z-index: 10;
 }
 
 .topbar h1 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .main {
@@ -52,30 +72,48 @@ body {
 .card {
   background: var(--card);
   border: 1px solid #30363d;
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 12px;
+  border-radius: 16px; /* Более скругленные углы */
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Мягкая тень */
+  transition: transform 0.1s ease;
+}
+
+/* Эффект нажатия на карточку (если она кликабельна) */
+.card.clickable:active {
+  transform: scale(0.98);
 }
 
 .card h2 {
-  margin: 0 0 10px;
-  font-size: 0.95rem;
+  margin: 0 0 12px;
+  font-size: 0.85rem;
   color: var(--muted);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .metric-big {
-  font-size: 2rem;
+  font-size: 2.5rem; /* Сделал цифры еще больше и выразительнее */
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
 }
+
+/* Цвета метрик */
+.metric-green { color: var(--recovery-green); }
+.metric-yellow { color: var(--recovery-yellow); }
+.metric-red { color: var(--recovery-red); }
+.metric-blue { color: var(--sleep-blue); }
 
 .sub {
   color: var(--muted);
   font-size: 0.9rem;
-  margin-top: 6px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn {
@@ -83,29 +121,50 @@ body {
   border: 1px solid #30363d;
   background: #21262d;
   color: var(--text);
-  padding: 12px 16px;
-  border-radius: 10px;
+  padding: 14px 16px; /* Увеличил зону нажатия */
+  border-radius: 12px;
   font-size: 1rem;
   width: 100%;
   cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+/* Эффект нажатия для кнопок */
+.btn:active {
+  transform: scale(0.97);
+  opacity: 0.8;
 }
 
 .btn-primary {
   background: var(--accent);
   border-color: var(--accent);
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(35, 134, 54, 0.2);
 }
 
 .btn-danger {
-  background: #21262d;
-  border-color: var(--danger);
-  color: #ff7b72;
+  background: rgba(248, 81, 73, 0.1);
+  border-color: rgba(248, 81, 73, 0.3);
+  color: var(--danger);
+}
+
+.btn-danger:active {
+  background: rgba(248, 81, 73, 0.2);
 }
 
 .btn-ghost {
   width: auto;
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  color: var(--sleep-blue);
+  font-weight: 600;
+}
+
+.btn-ghost:active {
+  background: rgba(88, 166, 255, 0.1);
 }
 
 .tabbar {
@@ -116,23 +175,45 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
-  background: rgba(22, 27, 34, 0.96);
-  border-top: 1px solid #30363d;
+  background: rgba(22, 27, 34, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(48, 54, 61, 0.5);
   padding-bottom: var(--safe-area-bottom);
   z-index: 20;
 }
 
 .tabbar a {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 10px 4px 8px;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
+  font-weight: 500;
   color: var(--muted);
   text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.tabbar a svg {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
+  fill: currentColor;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tabbar a:active svg {
+  transform: scale(0.85);
 }
 
 .tabbar a.active {
   color: var(--text);
-  font-weight: 600;
+}
+
+.tabbar a.active svg {
+  color: var(--sleep-blue); /* Активная иконка синяя */
 }
 
 .list {
