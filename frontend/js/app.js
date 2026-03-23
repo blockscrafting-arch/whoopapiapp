@@ -269,7 +269,15 @@ async function route() {
     showToast(`WHOOP: ${oauthErr}`);
   }
 
-  const loggedIn = await checkAuth();
+  let loggedIn = false;
+  try {
+    loggedIn = await checkAuth();
+  } catch (e) {
+    appEl.innerHTML = `<div class="card center" style="margin-top:20px"><p class="muted">Нет связи с сервером</p><p style="color:var(--danger)">${escapeHtml(e.message)}</p><button class="btn" type="button" id="btn-retry-auth" style="margin-top:16px">Повторить</button></div>`;
+    document.getElementById("btn-retry-auth").onclick = () => route();
+    return;
+  }
+
   if (!loggedIn) {
     renderLogin();
     return;
@@ -282,7 +290,7 @@ async function route() {
     else if (h === "#/profile") await renderProfile();
     else await renderDashboard();
   } catch (e) {
-    appEl.innerHTML = `<div class="card"><p class="muted">Ошибка загрузки</p><p>${escapeHtml(e.message)}</p><button class="btn" type="button" id="btn-retry">Повторить</button></div>`;
+    appEl.innerHTML = `<div class="card center" style="margin-top:20px"><p class="muted">Ошибка загрузки</p><p style="color:var(--danger)">${escapeHtml(e.message)}</p><button class="btn" type="button" id="btn-retry" style="margin-top:16px">Повторить</button></div>`;
     document.getElementById("btn-retry").onclick = () => route();
     showToast(e.message);
   }

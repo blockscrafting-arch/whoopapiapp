@@ -53,8 +53,14 @@ async def list_workouts(
 
     async def fetcher() -> dict:
         try:
-            return await get_json(
-                db, http, user, "/v2/activity/workout", {"limit": 25, "start": start}
+            return await get_json_collection(
+                db,
+                http,
+                user,
+                "/v2/activity/workout",
+                {"limit": 25, "start": start},
+                max_pages=8,
+                max_records=200,
             )
         except WhoopRequestError as e:
             raise RuntimeError(str(e)) from e

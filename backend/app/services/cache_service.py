@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Optional
 
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -41,16 +42,22 @@ async def set_cached(
     cache_key: str,
     payload: dict[str, Any],
 ) -> None:
-    await db.execute(delete(WhoopCache).where(WhoopCache.cache_key == cache_key))
-    db.add(
-        WhoopCache(
-            user_id=user_id,
-            data_type=data_type,
-            cache_key=cache_key,
-            data_json=payload,
-            fetched_at=_now(),
-        )
+    """UPSERT кэша (предотвращает Race Condition при параллельном сохранении)."""
+    stmt = insert(WhoopCache).values(
+        user_id=user_id,
+        data_type=data_type,
+        cache_key=cache_key,
+        data_json=payload,
+        fetched_at=_now(),
     )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["cache_key"],
+        set_=dict(
+            data_json=stmt.excluded.data_json,
+            fetched_at=stmt.excluded.fetched_at,
+        ),
+    )
+    await db.execute(stmt)
     await db.flush()
 
 
