@@ -54,6 +54,15 @@ async def spa_index() -> FileResponse:
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> FileResponse:
+    icon = FRONTEND_DIR / "icons" / "icon-192.png"
+    if icon.exists():
+        return FileResponse(icon, media_type="image/png")
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
+
 @app.get("/manifest.json")
 async def manifest_json() -> FileResponse:
     return FileResponse(FRONTEND_DIR / "manifest.json")
