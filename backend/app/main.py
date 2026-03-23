@@ -41,8 +41,8 @@ app.add_middleware(
     secret_key=settings.SESSION_SECRET_KEY,
     session_cookie="whoop_session",
     max_age=86400 * 30,
-    same_site="lax",
-    https_only=not settings.DEBUG,
+    same_site="none",  # Для iOS Safari: чтобы cookie сессии доходили при OAuth-редиректе
+    https_only=True,   # SameSite=None требует Secure (https_only=True)
 )
 
 if settings.cors_origins_list:
