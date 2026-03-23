@@ -37,6 +37,7 @@ async def _load_user_with_token(db: AsyncSession, user_id: uuid.UUID) -> User | 
         select(User)
         .options(selectinload(User.token))
         .where(User.id == user_id)
+        .execution_options(populate_existing=True)
     )
     return q.scalar_one_or_none()
 
