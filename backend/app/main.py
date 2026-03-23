@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +23,18 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="WHOOP PWA", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def force_json_utf8_charset(request: Request, call_next):
+    """Safari/iOS иногда показывает кириллицу в сыром JSON как mojibake без charset в заголовке."""
+    response = await call_next(request)
+    ct = response.headers.get("content-type", "")
+    if "application/json" in ct and "charset=" not in ct.lower():
+        base = ct.split(";", 1)[0].strip()
+        response.headers["content-type"] = f"{base}; charset=utf-8"
+    return response
+
 
 app.add_middleware(
     SessionMiddleware,
